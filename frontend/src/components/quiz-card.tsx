@@ -30,31 +30,19 @@ export function QuizCard({ question, onNext, questionNumber, totalQuestions }: Q
     explanation: string
   } | null>(null)
 
-  const handleAnswerSelect = async (answerIndex: number) => {
+  const handleAnswerSelect = (answerIndex: number) => {
     if (showResult) return
 
     setSelectedAnswer(answerIndex)
 
-    try {
-      const response = await fetch("/api/quiz", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          questionId: question.id,
-          selectedAnswer: answerIndex,
-        }),
-      })
-
-      const data = await response.json()
-      if (data.success) {
-        setResult(data)
-        setShowResult(true)
-      }
-    } catch (error) {
-      console.error("Error submitting answer:", error)
-    }
+    // Validate answer locally using question data
+    const isCorrect = answerIndex === question.correctAnswer
+    setResult({
+      isCorrect,
+      correctAnswer: question.correctAnswer,
+      explanation: question.explanation,
+    })
+    setShowResult(true)
   }
 
   const handleNext = () => {

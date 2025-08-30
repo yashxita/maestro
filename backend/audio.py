@@ -27,13 +27,11 @@ def generate_audio_gemini(text: str, voice: str = "host", speed: float = 1.0) ->
             audio_data = generate_single_voice_audio_fast(seg, speed)
             if audio_data:
                 audio_segments.append(audio_data)
-                print(f"[DEBUG] Added {seg['voice']} segment ({len(audio_data)} bytes)")
 
         if not audio_segments:
             raise RuntimeError("No audio generated")
 
         combined_audio = b"".join(audio_segments)
-        print(f"[DEBUG] Final combined audio: {len(combined_audio)} bytes, {len(audio_segments)} segments")
 
         return iter([combined_audio])
 
@@ -61,7 +59,6 @@ def split_dialogue_line_by_line(text: str) -> list:
             # Default to host if no speaker label
             segments.append({"speaker": "host", "text": line, "voice": "host"})
 
-    print(f"[DEBUG] Parsed {len(segments)} line-by-line segments")
     return segments
 
 def generate_single_voice_audio_fast(segment: dict, speed: float) -> bytes:
@@ -69,8 +66,6 @@ def generate_single_voice_audio_fast(segment: dict, speed: float) -> bytes:
     try:
         text = segment["text"]
         voice_type = segment["voice"]
-
-        print(f"[DEBUG] Generating {voice_type} voice for: {text[:60]}...")
 
         if voice_type == "host":
             voice_name = "Brian"  # Male
@@ -102,9 +97,7 @@ def generate_single_voice_audio_fast(segment: dict, speed: float) -> bytes:
         if fallback_response.status_code == 200 and len(fallback_response.content) > 100:
             return fallback_response.content
 
-        print(f"[DEBUG] Failed to generate {voice_name} audio")
         return b""
 
     except Exception as e:
-        print(f"[DEBUG] Error in segment {segment.get('voice')}: {str(e)}")
         return b""
