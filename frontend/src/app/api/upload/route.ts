@@ -36,14 +36,14 @@ export async function POST(request: NextRequest) {
     const result = await externalResponse.json()
 
     let podcastScript = ""
+
     if (result.full_text) {
       try {
-        const podcastFormData = new FormData()
-        podcastFormData.append("text", result.full_text)
-
+        // Generate podcast script
         const podcastResponse = await fetch("http://127.0.0.1:8000/podcast", {
           method: "POST",
-          body: podcastFormData,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: result.full_text }),
         })
 
         if (podcastResponse.ok) {
