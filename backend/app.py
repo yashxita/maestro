@@ -66,13 +66,16 @@ async def podcast_from_text(req: TTSRequest):
 
 # ----- QUIZ -----
 @app.post("/generate-quiz")
-async def generate_quiz_endpoint(req: TTSRequest):
+async def generate_quiz_endpoint(req: dict):
     """Generate structured quiz questions from text."""
     try:
-        quiz_questions = generate_quiz(req.text)
+        text = req.get("text")
+        count = int(req.get("count", 5))  # default to 5
+        quiz_questions = generate_quiz(text, count)
         return JSONResponse({"success": True, "quiz": quiz_questions})
     except Exception as e:
         return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
 
 @app.post("/quiz")
 async def quiz_from_text(req: TTSRequest):

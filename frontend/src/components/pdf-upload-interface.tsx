@@ -142,7 +142,7 @@ export default function PDFUploadInterface() {
       <nav className="relative z-10 flex items-center justify-between p-6">
         <div className="flex items-center space-x-2">
           <Zap className="w-6 h-6 text-cyan-400" />
-          <span className="text-xl font-bold">Halo</span>
+          <span className="text-xl font-bold">Maestro</span>
         </div>
         <div className="hidden md:flex items-center space-x-8">
           <a href="#" className="text-gray-300 hover:text-cyan-400 transition-colors">

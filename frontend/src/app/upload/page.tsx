@@ -1,105 +1,136 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Zap, FileText, Loader2, CheckCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useRouter } from "next/navigation"
-import UploadZone from "@/components/upload-zone"
-import { uploadPDF, validatePDFFile } from "@/lib/upload-service"
+import { useState } from "react";
+import { Zap, FileText, Loader2, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useRouter } from "next/navigation";
+import UploadZone from "@/components/upload-zone";
+import { uploadPDF, validatePDFFile } from "@/lib/upload-service";
+import Plasma from "../../components/Plasma";
 
 export default function UploadPage() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
-  const [error, setError] = useState<string>("")
-  const [uploadComplete, setUploadComplete] = useState(false)
-  const router = useRouter()
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [uploadComplete, setUploadComplete] = useState(false);
+  const router = useRouter();
 
   const handleUpload = async () => {
-    if (!selectedFile) return
+    if (!selectedFile) return;
 
-    const validation = validatePDFFile(selectedFile)
+    const validation = validatePDFFile(selectedFile);
     if (!validation.isValid) {
-      setError(validation.error || "Invalid file")
-      return
+      setError(validation.error || "Invalid file");
+      return;
     }
 
-    setIsUploading(true)
-    setError("")
+    setIsUploading(true);
+    setError("");
 
-    const result = await uploadPDF(selectedFile)
+    try {
+      const result = await uploadPDF(selectedFile);
 
-    if (result.success && result.full_text) {
-      // Store extracted text and script in sessionStorage for next pages
-      sessionStorage.setItem("extractedText", result.full_text)
-      sessionStorage.setItem("podcastScript", result.podcast_script || "")
-      setUploadComplete(true)
+      if (result.success && result.full_text) {
+        sessionStorage.setItem("extractedText", result.full_text);
+        sessionStorage.setItem("podcastScript", result.podcast_script || "");
+        setUploadComplete(true);
 
-      // Redirect to options page after brief success display
-      setTimeout(() => {
-        router.push("/options")
-      }, 1500)
-    } else {
-      setError(result.error || result.message || "Upload failed")
+        setTimeout(() => {
+          router.push("/options");
+        }, 1500);
+      } else {
+        setError(result.error || result.message || "Upload failed");
+      }
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setIsUploading(false);
     }
-
-    setIsUploading(false)
-  }
+  };
 
   const handleFileSelect = (file: File | null) => {
-    setSelectedFile(file)
-    if (error) {
-      setError("")
-    }
-    setUploadComplete(false)
-  }
+    setSelectedFile(file);
+    if (error) setError("");
+    setUploadComplete(false);
+  };
 
+  // ✅ Success screen
   if (uploadComplete) {
     return (
       <div className="min-h-screen bg-black text-white relative overflow-hidden flex items-center justify-center">
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-blue-500/5 to-purple-500/10" />
-        <div className="relative z-10 text-center">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-green-400 mb-2">Upload Successful!</h2>
+         <div className="absolute inset-0 z-0">
+        <div style={{ width: "100%", height: "100%", position: "relative" }}>
+          <Plasma
+          color="#00E5FF"
+          speed={0.6}
+          direction="forward"
+          scale={1.9}
+          opacity={0.5}
+          mouseInteractive={false}
+        />
+        </div>
+        </div>
+        <div className="relative z-10 text-center px-4">
+          <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4 animate-bounce" />
+          <h2 className="text-2xl md:text-3xl font-bold text-green-400 mb-2">
+            Upload Successful!
+          </h2>
           <p className="text-gray-300">Processing your document...</p>
         </div>
       </div>
-    )
+    );
   }
 
+  // ✅ Upload screen
   return (
-    <div className="min-h-screen bg-black text-white relative overflow-hidden">
-      {/* Background glow effects */}
-      <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-blue-500/5 to-purple-500/10" />
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-400/20 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl" />
-
+    <div className="min-h-screen bg-black text-white relative overflow-hidden flex flex-col">
+      <div className="absolute inset-0 z-0">
+      <div style={{ width: "100%", height: "100%", position: "relative" }}>
+        <Plasma
+          color="#00E5FF"
+          speed={0.6}
+          direction="forward"
+          scale={1.9}
+          opacity={0.5}
+          mouseInteractive={false}
+        />
+      </div>
+</div>
       {/* Navigation */}
-      <nav className="relative z-10 flex items-center justify-between p-6">
+      <nav className="relative z-10 flex items-center justify-between px-6 py-4">
         <div className="flex items-center space-x-2">
           <Zap className="w-6 h-6 text-cyan-400" />
-          <span className="text-xl font-bold">Halo AI</span>
+          <span className="text-xl font-bold tracking-wide">Maestro</span>
         </div>
       </nav>
 
-      {/* Main Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center px-8 py-16">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
+      {/* Main */}
+      <main className="relative z-10 flex flex-col items-center justify-center flex-1 px-6 py-12">
+        <div className="text-center max-w-3xl">
+          <h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">
             Upload Your{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Document</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+              Document
+            </span>
           </h1>
-          <p className="text-xl text-gray-300 mb-8">
-            Upload a PDF to extract content and create AI-powered experiences.
+          <p className="text-lg md:text-xl text-gray-300 mb-10">
+            Turn your PDFs into AI-powered experiences in just a few clicks.
           </p>
         </div>
 
-        {/* Upload Interface */}
+        {/* Upload Zone */}
         <div className="w-full max-w-2xl space-y-6">
-          <UploadZone onFileSelect={handleFileSelect} selectedFile={selectedFile} />
+          <UploadZone
+            onFileSelect={handleFileSelect}
+            selectedFile={selectedFile}
+          />
 
           {error && (
-            <Alert variant="destructive" className="bg-red-900/20 border-red-500/50">
+            <Alert
+              variant="destructive"
+              className="bg-red-900/20 border-red-500/50"
+            >
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
@@ -108,7 +139,7 @@ export default function UploadPage() {
             <Button
               variant="outline"
               onClick={() => document.getElementById("fileUpload")?.click()}
-              className="bg-gray-800 hover:bg-gray-700 border-gray-600 hover:border-gray-500"
+              className="bg-gray-800 hover:bg-gray-700 border-gray-600 hover:border-gray-500 transition-colors"
             >
               {selectedFile ? "Change File" : "Choose PDF"}
             </Button>
@@ -116,7 +147,7 @@ export default function UploadPage() {
             <Button
               onClick={handleUpload}
               disabled={!selectedFile || isUploading}
-              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40"
+              className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 transition-all"
             >
               {isUploading ? (
                 <>
@@ -132,7 +163,7 @@ export default function UploadPage() {
             </Button>
           </div>
         </div>
-      </div>
+      </main>
     </div>
-  )
+  );
 }

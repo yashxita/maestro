@@ -41,7 +41,7 @@ export default function OptionsPage() {
       <nav className="relative z-10 flex items-center justify-between p-6">
         <div className="flex items-center space-x-2">
           <Zap className="w-6 h-6 text-cyan-400" />
-          <span className="text-xl font-bold">Halo AI</span>
+          <span className="text-xl font-bold">Maestro</span>
         </div>
       </nav>
 

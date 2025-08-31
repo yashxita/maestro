@@ -45,7 +45,7 @@ export default function UploadZone({ onFileSelect, selectedFile }: UploadZonePro
   }, [onFileSelect])
 
   return (
-    <div className="w-full">
+    <div className="w-full ">
       <input id="fileUpload" type="file" accept=".pdf" onChange={handleFileInput} className="hidden" />
 
       {selectedFile ? (

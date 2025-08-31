@@ -1,6 +1,8 @@
 export interface UploadResponse {
   success: boolean
   full_text?: string
+  podcast_script?: string   // ✅ add this
+  message?: string          // ✅ add this
   error?: string
 }
 

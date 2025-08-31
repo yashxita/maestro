@@ -42,13 +42,13 @@ Please format as a natural podcast script with:
         return f"Welcome to today's podcast. Let me share some insights from the document: {text[:500]}..."
 
 
-def generate_quiz(text: str) -> list:
+def generate_quiz(text: str, count: int = 5) -> list:
     """Generate structured quiz questions from text using Gemini."""
     try:
         model = genai.GenerativeModel("gemini-1.5-flash")
 
         prompt = f"""
-Create exactly 5 multiple-choice quiz questions based on the following text.  
+Create exactly {count} multiple-choice quiz questions based on the following text.  
 Return ONLY a valid JSON array with this exact structure:
 [
   {{
@@ -73,35 +73,28 @@ Text:
         response = model.generate_content(prompt)
         quiz_text = response.text.strip()
 
-        # --- CLEAN JSON OUTPUT ---
-        # Remove markdown wrappers like ```json ... ```
+        # Clean JSON output
         if quiz_text.startswith("```"):
             quiz_text = quiz_text.strip("`")
             if "json" in quiz_text:
                 quiz_text = quiz_text.replace("json", "", 1).strip()
 
-        # Find the first and last bracket to ensure valid JSON extraction
         if "[" in quiz_text and "]" in quiz_text:
             quiz_text = quiz_text[quiz_text.find("["): quiz_text.rfind("]") + 1]
 
-        # Try parsing JSON
         quiz_data = json.loads(quiz_text)
 
-        # Ensure it's a valid list
-        if isinstance(quiz_data, list) and len(quiz_data) == 5:
+        if isinstance(quiz_data, list) and len(quiz_data) == count:
             return quiz_data
 
         raise ValueError("Invalid quiz format")
 
     except Exception as e:
         print(f"Error generating quiz: {e}")
-        # --- FALLBACK QUIZ ---
-        return [
-            {
-                "id": 1,
-                "question": "What type of content was analyzed?",
-                "options": ["Document", "Video", "Audio", "Image"],
-                "correctAnswer": 0,
-                "explanation": "The system analyzed document content to generate this quiz.",
-            }
-        ]
+        return [{
+            "id": 1,
+            "question": "What type of content was analyzed?",
+            "options": ["Document", "Video", "Audio", "Image"],
+            "correctAnswer": 0,
+            "explanation": "The system analyzed document content to generate this quiz.",
+        }]
