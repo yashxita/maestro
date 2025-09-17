@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Play, Pause, Volume2 } from "lucide-react"
 import { VOICE_ACTORS, SPEED_OPTIONS } from "@/lib/voice-actors"
-import type { VoiceActor } from "../lib/types/podcast"
+import type { VoiceActor } from "@/lib/types/podcast"
 
 interface VoiceSelectorProps {
   selectedVoice: string

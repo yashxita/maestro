@@ -6,7 +6,6 @@ import Dither from "@/components/Dither";
 export default function Home() {
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
-      {/* Background Dither */}
       <div className="absolute inset-0 z-0">
         <div style={{ width: "100%", height: "100%", position: "relative" }}>
           <Dither
@@ -101,14 +100,14 @@ export default function Home() {
           <div className="bg-white/10 border border-gray-700 rounded-2xl p-6 shadow-lg">
             <Users className="w-8 h-8 text-cyan-400 mb-4" />
             <p className="text-gray-300 mb-4">
-              "Maestro turned my boring lecture notes into a podcast I actually enjoyed listening to!"
+              &quot;Maestro turned my boring lecture notes into a podcast I actually enjoyed listening to!&quot;
             </p>
             <span className="text-cyan-400 font-semibold">– Student</span>
           </div>
           <div className="bg-white/10 border border-gray-700 rounded-2xl p-6 shadow-lg">
             <Users className="w-8 h-8 text-purple-400 mb-4" />
             <p className="text-gray-300 mb-4">
-              "The quizzes helped me prepare for exams faster than ever."
+              &quot;The quizzes helped me prepare for exams faster than ever.&quot;
             </p>
             <span className="text-purple-400 font-semibold">– Educator</span>
           </div>

@@ -1,66 +1,69 @@
-"use client"
+"use client";
 
-import { useState, useRef } from "react"
-import { Zap, FileText, Loader2, Mic, Play, Download } from "lucide-react"
-import UploadZone from "./upload-zone"
-import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { uploadPDF, validatePDFFile } from "../lib/upload-service"
-import { voiceActors, type VoiceActor } from "../lib/voice-actors"
+import { useState, useRef } from "react";
+import { Zap, FileText, Loader2, Mic, Play, Download } from "lucide-react";
+import UploadZone from "./upload-zone";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { uploadPDF, validatePDFFile } from "../lib/upload-service";
+import { voiceActors } from "@/lib/voice-actors";
+import type { VoiceActor } from "@/lib/types/podcast";
 
 export default function PDFUploadInterface() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
-  const [extractedText, setExtractedText] = useState<string>("")
-  const [podcastScript, setPodcastScript] = useState<string>("")
-  const [error, setError] = useState<string>("")
-  const [audioURL, setAudioURL] = useState<string>("")
-  const [speed, setSpeed] = useState<"slow" | "normal" | "fast">("normal")
-  const [selectedVoice, setSelectedVoice] = useState<VoiceActor>(voiceActors[0])
-  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [extractedText, setExtractedText] = useState<string>("");
+  const [podcastScript, setPodcastScript] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [audioURL, setAudioURL] = useState<string>("");
+  const [speed, setSpeed] = useState<"slow" | "normal" | "fast">("normal");
+  const [selectedVoice, setSelectedVoice] = useState<VoiceActor>(
+    voiceActors[0]
+  );
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const handleUpload = async () => {
-    if (!selectedFile) return
+    if (!selectedFile) return;
 
-    const validation = validatePDFFile(selectedFile)
+    const validation = validatePDFFile(selectedFile);
     if (!validation.isValid) {
-      setError(validation.error || "Invalid file")
-      return
+      setError(validation.error || "Invalid file");
+      return;
     }
 
-    setIsUploading(true)
-    setError("")
+    setIsUploading(true);
+    setError("");
 
-    const result = await uploadPDF(selectedFile)
+    const result = await uploadPDF(selectedFile);
 
     if (result.success && result.full_text) {
-      setExtractedText(result.full_text)
-      setPodcastScript(result.podcast_script || "")
+      setExtractedText(result.full_text);
+      setPodcastScript(result.podcast_script || "");
     } else {
-      setError(result.error || result.message || "Upload failed")
+      setError(result.error || result.message || "Upload failed");
     }
 
-    setIsUploading(false)
-  }
+    setIsUploading(false);
+  };
 
   const handleFileSelect = (file: File | null) => {
-    setSelectedFile(file)
+    setSelectedFile(file);
     if (!file) {
-      setExtractedText("")
-      setPodcastScript("")
+      setExtractedText("");
+      setPodcastScript("");
     }
     if (error) {
-      setError("")
+      setError("");
     }
-  }
+  };
 
   const handleGenerateAudio = async () => {
-    if (!podcastScript) return
+    if (!podcastScript) return;
 
-    setIsGeneratingAudio(true)
-    setError("")
+    setIsGeneratingAudio(true);
+    setError("");
 
     try {
       const res = await fetch("/api/generate-audio", {
@@ -73,27 +76,27 @@ export default function PDFUploadInterface() {
           voice: selectedVoice.id, // Now "host" or "guest"
           speed: speed === "slow" ? 0.8 : speed === "fast" ? 1.25 : 1.0,
         }),
-      })
+      });
 
       if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`)
+        throw new Error(`HTTP error! status: ${res.status}`);
       }
 
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      setAudioURL(url)
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      setAudioURL(url);
 
       if (audioRef.current) {
-        audioRef.current.load()
-        audioRef.current.play()
+        audioRef.current.load();
+        audioRef.current.play();
       }
     } catch (error) {
-      console.error("Audio generation failed:", error)
-      setError("Failed to generate audio. Please try again.")
+      console.error("Audio generation failed:", error);
+      setError("Failed to generate audio. Please try again.");
     } finally {
-      setIsGeneratingAudio(false)
+      setIsGeneratingAudio(false);
     }
-  }
+  };
 
   const handleVoicePreview = async (voice: VoiceActor) => {
     try {
@@ -107,29 +110,29 @@ export default function PDFUploadInterface() {
           voice: voice.id,
           speed: 1.0,
         }),
-      })
+      });
 
       if (res.ok) {
-        const blob = await res.blob()
-        const url = URL.createObjectURL(blob)
-        const audio = new Audio(url)
-        audio.play()
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.play();
       }
     } catch (error) {
-      console.error("Voice preview failed:", error)
+      console.error("Voice preview failed:", error);
     }
-  }
+  };
 
   const handleDownload = () => {
     if (audioURL) {
-      const a = document.createElement("a")
-      a.href = audioURL
-      a.download = `podcast-${selectedVoice.name.toLowerCase()}-${Date.now()}.mp3`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
+      const a = document.createElement("a");
+      a.href = audioURL;
+      a.download = `podcast-${selectedVoice.name.toLowerCase()}-${Date.now()}.mp3`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
@@ -145,22 +148,40 @@ export default function PDFUploadInterface() {
           <span className="text-xl font-bold">Maestro</span>
         </div>
         <div className="hidden md:flex items-center space-x-8">
-          <a href="#" className="text-gray-300 hover:text-cyan-400 transition-colors">
+          <a
+            href="#"
+            className="text-gray-300 hover:text-cyan-400 transition-colors"
+          >
             services
           </a>
-          <a href="#" className="text-gray-300 hover:text-cyan-400 transition-colors">
+          <a
+            href="#"
+            className="text-gray-300 hover:text-cyan-400 transition-colors"
+          >
             process
           </a>
-          <a href="#" className="text-gray-300 hover:text-cyan-400 transition-colors">
+          <a
+            href="#"
+            className="text-gray-300 hover:text-cyan-400 transition-colors"
+          >
             team
           </a>
-          <a href="#" className="text-gray-300 hover:text-cyan-400 transition-colors">
+          <a
+            href="#"
+            className="text-gray-300 hover:text-cyan-400 transition-colors"
+          >
             pricing
           </a>
-          <a href="#" className="text-gray-300 hover:text-cyan-400 transition-colors">
+          <a
+            href="#"
+            className="text-gray-300 hover:text-cyan-400 transition-colors"
+          >
             FAQ
           </a>
-          <a href="#" className="text-gray-300 hover:text-cyan-400 transition-colors">
+          <a
+            href="#"
+            className="text-gray-300 hover:text-cyan-400 transition-colors"
+          >
             contact
           </a>
         </div>
@@ -173,18 +194,29 @@ export default function PDFUploadInterface() {
       <div className="relative z-10 flex flex-col items-center justify-center px-8 py-16">
         <div className="text-center mb-12">
           <h1 className="text-5xl md:text-7xl font-bold mb-6">
-            PDF <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">AI</span>{" "}
+            PDF{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+              AI
+            </span>{" "}
             studio.
           </h1>
-          <p className="text-xl text-gray-300 mb-8">Extract and analyze text from PDFs with advanced AI processing.</p>
+          <p className="text-xl text-gray-300 mb-8">
+            Extract and analyze text from PDFs with advanced AI processing.
+          </p>
         </div>
 
         {/* Upload Interface */}
         <div className="w-full max-w-2xl space-y-6">
-          <UploadZone onFileSelect={handleFileSelect} selectedFile={selectedFile} />
+          <UploadZone
+            onFileSelect={handleFileSelect}
+            selectedFile={selectedFile}
+          />
 
           {error && (
-            <Alert variant="destructive" className="bg-red-900/20 border-red-500/50">
+            <Alert
+              variant="destructive"
+              className="bg-red-900/20 border-red-500/50"
+            >
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
@@ -221,12 +253,18 @@ export default function PDFUploadInterface() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
                   <FileText className="w-5 h-5 text-cyan-400" />
-                  <h2 className="text-xl font-semibold text-cyan-400">Extracted Text</h2>
+                  <h2 className="text-xl font-semibold text-cyan-400">
+                    Extracted Text
+                  </h2>
                 </div>
-                <div className="text-sm text-gray-400">{extractedText.length} characters</div>
+                <div className="text-sm text-gray-400">
+                  {extractedText.length} characters
+                </div>
               </div>
               <div className="max-h-96 overflow-y-auto bg-black/50 rounded-xl p-4 border border-gray-800">
-                <pre className="whitespace-pre-wrap text-gray-300 text-sm leading-relaxed">{extractedText}</pre>
+                <pre className="whitespace-pre-wrap text-gray-300 text-sm leading-relaxed">
+                  {extractedText}
+                </pre>
               </div>
             </div>
 
@@ -235,16 +273,24 @@ export default function PDFUploadInterface() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
                     <Mic className="w-5 h-5 text-purple-400" />
-                    <h2 className="text-xl font-semibold text-purple-400">Podcast Script</h2>
+                    <h2 className="text-xl font-semibold text-purple-400">
+                      Podcast Script
+                    </h2>
                   </div>
-                  <div className="text-sm text-gray-400">{podcastScript.length} characters</div>
+                  <div className="text-sm text-gray-400">
+                    {podcastScript.length} characters
+                  </div>
                 </div>
                 <div className="max-h-96 overflow-y-auto bg-black/50 rounded-xl p-4 border border-gray-800">
-                  <pre className="whitespace-pre-wrap text-gray-300 text-sm leading-relaxed">{podcastScript}</pre>
+                  <pre className="whitespace-pre-wrap text-gray-300 text-sm leading-relaxed">
+                    {podcastScript}
+                  </pre>
                 </div>
 
                 <div className="mt-6 space-y-4">
-                  <h3 className="text-lg font-semibold text-purple-400">Choose Voice (Host/Guest)</h3>
+                  <h3 className="text-lg font-semibold text-purple-400">
+                    Choose Voice (Host/Guest)
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {voiceActors.map((voice) => (
                       <div
@@ -257,23 +303,44 @@ export default function PDFUploadInterface() {
                         onClick={() => setSelectedVoice(voice)}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold text-white">{voice.name}</h4>
+                          <h4 className="font-semibold text-white">
+                            {voice.name}
+                          </h4>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={(e) => {
-                              e.stopPropagation()
-                              handleVoicePreview(voice)
+                              e.stopPropagation();
+                              handleVoicePreview(voice);
                             }}
                             className="h-8 w-8 p-0 hover:bg-purple-500/20"
                           >
                             <Play className="w-4 h-4" />
                           </Button>
                         </div>
-                        <p className="text-sm text-gray-400 mb-2">{voice.description}</p>
-                        <div className="flex gap-1">
+
+                        {/* description */}
+                        <p className="text-sm text-gray-400 mb-2">
+                          {voice.description}
+                        </p>
+
+                        {/* gender + accent */}
+                        <div className="flex gap-2 mb-2">
+                          <span className="px-2 py-1 text-xs rounded bg-gray-700 text-gray-300">
+                            {voice.gender}
+                          </span>
+                          <span className="px-2 py-1 text-xs rounded bg-gray-700 text-gray-300">
+                            {voice.accent}
+                          </span>
+                        </div>
+
+                        {/* tags */}
+                        <div className="flex gap-1 flex-wrap">
                           {voice.tags.map((tag) => (
-                            <span key={tag} className="px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded">
+                            <span
+                              key={tag}
+                              className="px-2 py-1 text-xs bg-gray-700 text-gray-300 rounded"
+                            >
                               {tag}
                             </span>
                           ))}
@@ -281,11 +348,14 @@ export default function PDFUploadInterface() {
                       </div>
                     ))}
                   </div>
+
                   <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
                     <p className="text-sm text-blue-200">
-                      💡 <strong>Tip:</strong> The system will automatically use both voices in your podcast - Brian
-                      (male) for host segments and Amy (female) for guest segments. Your selection here determines the
-                      primary voice for single-speaker content.
+                      💡 <strong>Tip:</strong> The system will automatically use
+                      both voices in your podcast - Brian (male) for host
+                      segments and Amy (female) for guest segments. Your
+                      selection here determines the primary voice for
+                      single-speaker content.
                     </p>
                   </div>
                 </div>
@@ -293,14 +363,22 @@ export default function PDFUploadInterface() {
                 <div className="mt-6 flex flex-col gap-4">
                   {/* Speed Selector */}
                   <div className="flex gap-2">
-                    <span className="text-sm text-gray-400 self-center mr-2">Speed:</span>
+                    <span className="text-sm text-gray-400 self-center mr-2">
+                      Speed:
+                    </span>
                     {["slow", "normal", "fast"].map((s) => (
                       <Button
                         key={s}
                         variant={speed === s ? "default" : "outline"}
                         size="sm"
-                        onClick={() => setSpeed(s as "slow" | "normal" | "fast")}
-                        className={speed === s ? "bg-purple-700 text-white" : "bg-gray-800 text-gray-300"}
+                        onClick={() =>
+                          setSpeed(s as "slow" | "normal" | "fast")
+                        }
+                        className={
+                          speed === s
+                            ? "bg-purple-700 text-white"
+                            : "bg-gray-800 text-gray-300"
+                        }
                       >
                         {s}
                       </Button>
@@ -342,8 +420,12 @@ export default function PDFUploadInterface() {
                   {audioURL && (
                     <div className="bg-black/50 rounded-xl p-4 border border-gray-800">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-400">Multi-voice podcast with Brian & Amy</span>
-                        <span className="text-xs text-gray-500">Speed: {speed}</span>
+                        <span className="text-sm text-gray-400">
+                          Multi-voice podcast with Brian & Amy
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          Speed: {speed}
+                        </span>
                       </div>
                       <audio ref={audioRef} controls className="w-full">
                         <source src={audioURL} type="audio/mpeg" />
@@ -360,8 +442,10 @@ export default function PDFUploadInterface() {
 
       {/* Footer */}
       <footer className="relative z-10 mt-16 text-center pb-8">
-        <p className="text-gray-500 text-sm">We develop custom AI solutions for innovative companies.</p>
+        <p className="text-gray-500 text-sm">
+          We develop custom AI solutions for innovative companies.
+        </p>
       </footer>
     </div>
-  )
+  );
 }

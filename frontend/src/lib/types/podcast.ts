@@ -30,4 +30,6 @@ export interface VoiceActor {
   description: string
   gender: "male" | "female"
   accent: string
+  tags: string[]
+  preview: string
 }
