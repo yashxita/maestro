@@ -12,7 +12,7 @@ if GEMINI_API_KEY:
 def generate_podcast_script(text: str) -> str:
     """Generate a podcast script from extracted text using Gemini."""
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-2.5-flash")
 
         prompt = f"""
 Convert the following text into an engaging podcast script.  
