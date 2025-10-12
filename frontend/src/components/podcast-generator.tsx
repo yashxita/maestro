@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Upload, FileText, Headphones, Download, Play, Pause } from "lucide-react"
 import { VoiceSelector } from "../components/voice-selector"
 import type { UploadResponse, UploadProgress } from "../lib/types/podcast"
-const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export function PodcastGenerator() {
   const [file, setFile] = useState<File | null>(null)
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null)
@@ -42,7 +42,7 @@ export function PodcastGenerator() {
     try {
       setUploadProgress({ loaded: 0, total: 100, percentage: 0 })
 
-      const response = await fetch(`${baseUrl}/api/upload`, {
+      const response = await fetch(`/api/upload`, {
         method: "POST",
         body: formData,
       })
@@ -69,7 +69,7 @@ export function PodcastGenerator() {
     setError(null)
 
     try {
-      const response = await fetch(`${baseUrl}/api/generate-audio`, {
+      const response = await fetch(`/api/generate-audio`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

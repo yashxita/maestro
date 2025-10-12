@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Play, Pause, Volume2 } from "lucide-react"
 import { VOICE_ACTORS, SPEED_OPTIONS } from "@/lib/voice-actors"
 import type { VoiceActor } from "@/lib/types/podcast"
-const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 interface VoiceSelectorProps {
   selectedVoice: string
   selectedSpeed: number
@@ -42,7 +42,7 @@ export function VoiceSelector({
       setPlayingVoice(voice.id)
 
       // Generate audio sample
-      const response = await fetch(`${baseUrl}/api/generate-audio`, {
+      const response = await fetch(`/api/generate-audio`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
