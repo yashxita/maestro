@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
     const externalFormData = new FormData()
     externalFormData.append("file", file)
 
-    const externalResponse = await fetch("http://127.0.0.1:8000/upload", {
+    const externalResponse = await fetch(`${baseUrl}/upload`, {
       method: "POST",
       body: externalFormData,
     })
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
     if (result.full_text) {
       try {
         // Generate podcast script
-        const podcastResponse = await fetch("http://127.0.0.1:8000/podcast", {
+        const podcastResponse = await fetch(`${baseUrl}/podcast`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: result.full_text }),

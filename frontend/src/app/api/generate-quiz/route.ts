@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 export async function POST(request: NextRequest) {
   try {
     const { text, count } = await request.json()
@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Text is required" }, { status: 400 })
     }
 
-    const response = await fetch("http://localhost:8000/generate-quiz", {
+    const response = await fetch(`${baseUrl}/generate-quiz`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, count }),
