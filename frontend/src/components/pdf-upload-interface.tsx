@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { uploadPDF, validatePDFFile } from "../lib/upload-service";
 import { voiceActors } from "@/lib/voice-actors";
 import type { VoiceActor } from "@/lib/types/podcast";
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function PDFUploadInterface() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -66,7 +67,7 @@ export default function PDFUploadInterface() {
     setError("");
 
     try {
-      const res = await fetch("/api/generate-audio", {
+      const res = await fetch(`${baseUrl}/api/generate-audio`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -100,7 +101,7 @@ export default function PDFUploadInterface() {
 
   const handleVoicePreview = async (voice: VoiceActor) => {
     try {
-      const res = await fetch("/api/generate-audio", {
+      const res = await fetch(`${baseUrl}/api/generate-audio`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

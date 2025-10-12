@@ -1,5 +1,5 @@
 import type { UploadResponse, FileValidationResult } from "../lib/types/upload"
-
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 export function validatePDFFile(file: File): FileValidationResult {
   // Check file type
   if (file.type !== "application/pdf") {
@@ -34,7 +34,7 @@ export async function uploadPDF(file: File): Promise<UploadResponse> {
     const formData = new FormData()
     formData.append("file", file)
 
-    const response = await fetch("/api/upload", {
+    const response = await fetch(`${baseUrl}/api/upload`, {
       method: "POST",
       body: formData,
     })
