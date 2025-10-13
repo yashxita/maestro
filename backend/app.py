@@ -11,7 +11,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from utils.extracts import extract_text
-from utils.gemini import generate_podcast_script, generate_quiz
+from utils.gemini import generate_podcast_script, generate_quiz, generate_chat_response
 from audio import generate_audio_gemini as generate_audio   # ✅ now using Gemini TTS
 
 # ✅ Load Gemini API Key
@@ -34,6 +34,10 @@ class TTSRequest(BaseModel):
     text: str
     voice: Optional[str] = "host"  # Only "host" or "guest"
     speed: Optional[float] = 1.0
+
+class ChatRequest(BaseModel):
+    message: str
+    context: Optional[str] = None
 
 
 # ---------- ROUTES ----------
@@ -119,6 +123,16 @@ async def audio_fast(req: TTSRequest):
 async def audio_slow(req: TTSRequest):
     req.speed = 0.8
     return await generate_audio_endpoint(req)
+
+# ----- CHAT -----
+@app.post("/chat")
+async def chat_endpoint(req: ChatRequest):
+    """Handle conversational chat messages using Gemini."""
+    try:
+        response = generate_chat_response(req.message, req.context)
+        return JSONResponse({"success": True, "response": response})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
 
 
 # ---------- START SERVER ----------

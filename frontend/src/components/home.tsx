@@ -46,7 +46,7 @@ export default function Home() {
         <p className="text-xl text-gray-300 mb-8 max-w-6xl">
           Upload any document and let Maestro turn it into a podcast, interactive quiz, or AI-powered study guide.
         </p>
-        <Link href="/upload">
+        <Link href="/chat">
           <Button className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 text-lg px-8 py-4">
             Get Started
           </Button>
