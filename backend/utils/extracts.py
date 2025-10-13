@@ -8,21 +8,35 @@ import os
 
 def extract_text_from_pdf(path: str) -> str:
     text_parts = []
+
+    # Try direct text extraction first
     with pdfplumber.open(path) as pdf:
         for page in pdf.pages:
             txt = page.extract_text()
             if txt:
                 text_parts.append(txt)
 
-    # OCR fallback for images inside PDF
+    # OCR fallback
     pdf_doc = fitz.open(path)
-    for page in pdf_doc:
-        for img in page.get_images(full=True):
-            base_image = pdf_doc.extract_image(img[0])
-            image = Image.open(io.BytesIO(base_image["image"]))
-            ocr_text = pytesseract.image_to_string(image)
-            if ocr_text.strip():
-                text_parts.append(ocr_text)
+    for page_index, page in enumerate(pdf_doc):
+        for img_index, img in enumerate(page.get_images(full=True)):
+            xref = img[0]
+            base_image = pdf_doc.extract_image(xref)
+            image_bytes = base_image.get("image")
+            image_ext = base_image.get("ext", "")
+            if not image_bytes:
+                continue
+
+            try:
+                # safer open via BytesIO
+                image = Image.open(io.BytesIO(image_bytes))
+                ocr_text = pytesseract.image_to_string(image)
+                if ocr_text.strip():
+                    text_parts.append(ocr_text)
+            except Exception as e:
+                print(f"Skipping image on page {page_index+1}, index {img_index}: {e}")
+                continue
+
     return "\n".join(text_parts)
 
 
