@@ -6,10 +6,12 @@ import Link from "next/link"
 
 interface CompletedCardProps {
   hasQuiz: boolean
+  quizData?: any
   hasPodcast: boolean
+  podcastData?: any
 }
 
-export function CompletedCard({ hasQuiz, hasPodcast }: CompletedCardProps) {
+export function CompletedCard({ hasQuiz, quizData, hasPodcast, podcastData }: CompletedCardProps) {
   return (
     <div className="flex justify-center my-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
@@ -57,6 +59,14 @@ export function CompletedCard({ hasQuiz, hasPodcast }: CompletedCardProps) {
                 Listen Now
                 <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
+
+              {/* Optional: Store or preview podcastData if you want */}
+              {podcastData && (
+                <div className="mt-3 text-sm text-gray-400">
+                  {/* Example: short preview */}
+                  {podcastData.slice(0, 100)}...
+                </div>
+              )}
             </div>
           </Link>
         )}

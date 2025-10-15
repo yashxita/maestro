@@ -17,6 +17,7 @@ interface Message {
   fileName?: string
   fileSize?: number
   options?: { quiz: boolean; podcast: boolean }
+  selectedOptions?: { quiz: boolean; podcast: boolean }
   results?: { quiz?: any; podcast?: any }
 }
 
@@ -49,7 +50,6 @@ export function ChatPage() {
 
   const handleSelectChat = (chatId: string) => {
     setCurrentChatId(chatId)
-    // TODO: Load chat history from S3 based on chatId
     console.log("[v0] Selected chat:", chatId)
   }
 
@@ -87,10 +87,11 @@ export function ChatPage() {
     setUploadedFile(file)
 
     // Add user file message
+    const fileMsgId = `file-${Date.now()}`
     setMessages((prev) => [
       ...prev,
       {
-        id: Date.now().toString(),
+        id: fileMsgId,
         type: "file",
         fileName: file.name,
         fileSize: file.size,
@@ -98,17 +99,18 @@ export function ChatPage() {
     ])
 
     // Add bot processing message
+    const botMsgId = `bot-${Date.now()}`
     setMessages((prev) => [
       ...prev,
       {
-        id: Date.now().toString(),
+        id: botMsgId,
         type: "bot",
         content: "Great! I've received your PDF. Processing the content...",
       },
     ])
 
     // Add processing card
-    const processingId = Date.now().toString()
+    const processingId = `processing-${Date.now()}`
     setMessages((prev) => [
       ...prev,
       {
@@ -120,41 +122,36 @@ export function ChatPage() {
     setIsProcessing(true)
 
     try {
-      // Upload and extract text
       const formData = new FormData()
       formData.append("file", file)
 
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      })
-
+      const response = await fetch("/api/upload", { method: "POST", body: formData })
       if (!response.ok) throw new Error("Upload failed")
 
       const result = await response.json()
-
-      // Store extracted text
       sessionStorage.setItem("extractedText", result.full_text)
       sessionStorage.setItem("podcastScript", result.podcast_script || "")
 
       // Remove processing message
       setMessages((prev) => prev.filter((msg) => msg.id !== processingId))
 
-      // Add success message
+      // Add success bot message
+      const successMsgId = `bot-${Date.now()}`
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: successMsgId,
           type: "bot",
           content: "Perfect! Your document has been processed. What would you like to create?",
         },
       ])
 
       // Add options
+      const optionsId = `options-${Date.now()}`
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: optionsId,
           type: "options",
           options: { quiz: false, podcast: false },
         },
@@ -163,7 +160,7 @@ export function ChatPage() {
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: `bot-${Date.now()}`,
           type: "bot",
           content: "Sorry, there was an error processing your file. Please try again.",
         },
@@ -174,7 +171,6 @@ export function ChatPage() {
   }
 
   const handleOptionSelect = async (option: "quiz" | "podcast" | "both") => {
-    // Remove options message
     setMessages((prev) => prev.filter((msg) => msg.type !== "options"))
 
     const selectedOptions = {
@@ -182,124 +178,108 @@ export function ChatPage() {
       podcast: option === "podcast" || option === "both",
     }
 
-    // Add user selection message
     const optionText = option === "both" ? "both Quiz and Podcast" : option === "quiz" ? "Quiz" : "Podcast"
+
     setMessages((prev) => [
       ...prev,
       {
-        id: Date.now().toString(),
+        id: `user-${Date.now()}`,
         type: "user",
         content: `I'd like to create ${optionText}`,
       },
     ])
 
-    // Add bot confirmation
     setMessages((prev) => [
       ...prev,
       {
-        id: Date.now().toString(),
+        id: `bot-${Date.now()}`,
         type: "bot",
         content: `Excellent choice! I'm generating your ${optionText} now...`,
       },
     ])
 
-    // Add processing cards
     const processingIds: string[] = []
     if (selectedOptions.quiz) {
       const quizId = `quiz-${Date.now()}`
       processingIds.push(quizId)
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: quizId,
-          type: "processing",
-          content: "quiz",
-        },
-      ])
+      setMessages((prev) => [...prev, { id: quizId, type: "processing", content: "quiz" }])
     }
     if (selectedOptions.podcast) {
       const podcastId = `podcast-${Date.now()}`
       processingIds.push(podcastId)
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: podcastId,
-          type: "processing",
-          content: "podcast",
-        },
-      ])
+      setMessages((prev) => [...prev, { id: podcastId, type: "processing", content: "podcast" }])
     }
 
     try {
       const extractedText = sessionStorage.getItem("extractedText") || ""
-
       const results: { quiz?: any; podcast?: any } = {}
 
-      // Generate quiz if selected
       if (selectedOptions.quiz) {
         const quizResponse = await fetch("/api/generate-quiz", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: extractedText, count: 5 }),
         })
-
+        console.log("[v0] Quiz API response status:", quizResponse.status)
         if (quizResponse.ok) {
           const quizData = await quizResponse.json()
+          console.log("[v0] Quiz data received:", quizData)
           results.quiz = quizData.quiz
           sessionStorage.setItem("quizData", JSON.stringify(quizData.quiz))
         }
       }
 
-      // Generate podcast if selected
       if (selectedOptions.podcast) {
         const podcastResponse = await fetch("/api/generate-podcast", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: extractedText }),
         })
-
+        console.log("[v0] Podcast API response status:", podcastResponse.status)
         if (podcastResponse.ok) {
           const podcastData = await podcastResponse.json()
+          console.log("[v0] Podcast data received:", podcastData)
+          console.log("[v0] Podcast script value:", podcastData.podcast_script)
           results.podcast = podcastData.podcast_script
           sessionStorage.setItem("podcastScript", podcastData.podcast_script)
+        } else {
+          console.log("[v0] Podcast API failed with status:", podcastResponse.status)
         }
       }
 
       // Remove processing messages
       setMessages((prev) => prev.filter((msg) => !processingIds.includes(msg.id)))
 
-      // Add completed cards
+      console.log("[v0] Creating completed card with selectedOptions:", selectedOptions)
+      console.log("[v0] Results:", results)
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: `completed-${Date.now()}`,
           type: "completed",
+          selectedOptions: selectedOptions,
           results: {
-            quiz: selectedOptions.quiz ? results.quiz : undefined,
-            podcast: selectedOptions.podcast ? results.podcast : undefined,
+            quiz: results.quiz,
+            podcast: results.podcast,
           },
         },
       ])
 
-      // Add final bot message
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: `bot-${Date.now()}`,
           type: "bot",
           content: "All done! Click on any card below to view your content.",
         },
       ])
     } catch (error) {
       console.error("Generation error:", error)
-
-      // Remove processing messages
       setMessages((prev) => prev.filter((msg) => !processingIds.includes(msg.id)))
-
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: `bot-${Date.now()}`,
           type: "bot",
           content: "Sorry, there was an error generating your content. Please try again.",
         },
@@ -308,11 +288,10 @@ export function ChatPage() {
   }
 
   const handleSendMessage = async (message: string) => {
-    // Add user message
     setMessages((prev) => [
       ...prev,
       {
-        id: Date.now().toString(),
+        id: `user-${Date.now()}`,
         type: "user",
         content: message,
       },
@@ -324,26 +303,15 @@ export function ChatPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),
       })
-
       if (!response.ok) throw new Error("Chat failed")
 
       const result = await response.json()
-
-      // Add bot response
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          type: "bot",
-          content: result.response,
-        },
-      ])
+      setMessages((prev) => [...prev, { id: `bot-${Date.now()}`, type: "bot", content: result.response }])
     } catch (error) {
-      // Fallback response
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: `bot-${Date.now()}`,
           type: "bot",
           content:
             "I'm here to help you transform PDFs into quizzes and podcasts. Please upload a PDF file to get started!",
@@ -354,7 +322,6 @@ export function ChatPage() {
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden flex">
-      {/* Background effects */}
       <div className="absolute inset-0 z-0">
         <div style={{ width: "100%", height: "100%", position: "relative" }}>
           <Plasma color="#00E5FF" speed={0.6} direction="forward" scale={1.9} opacity={0.3} mouseInteractive={false} />
@@ -364,7 +331,6 @@ export function ChatPage() {
       <ChatSidebar currentChatId={currentChatId} onSelectChat={handleSelectChat} onNewChat={handleNewChat} />
 
       <div className="flex-1 flex flex-col">
-        {/* Navigation */}
         <nav className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-gray-800/50 backdrop-blur-sm">
           <div className="flex items-center space-x-2">
             <Zap className="w-6 h-6 text-cyan-400" />
@@ -376,7 +342,6 @@ export function ChatPage() {
           </div>
         </nav>
 
-        {/* Chat Container */}
         <div className="relative z-10 flex-1 overflow-y-auto px-4 py-6">
           <div className="max-w-4xl mx-auto space-y-4">
             {messages.map((message) => {
@@ -416,8 +381,10 @@ export function ChatPage() {
                 return (
                   <CompletedCard
                     key={message.id}
-                    hasQuiz={!!message.results?.quiz}
-                    hasPodcast={!!message.results?.podcast}
+                    hasQuiz={message.selectedOptions?.quiz || false}
+                    hasPodcast={message.selectedOptions?.podcast || false}
+                    quizData={message.results?.quiz}
+                    podcastData={message.results?.podcast}
                   />
                 )
               }
@@ -436,7 +403,6 @@ export function ChatPage() {
           </div>
         </div>
 
-        {/* Input Area */}
         <div className="relative z-10 border-t border-gray-800/50 backdrop-blur-sm">
           <div className="max-w-4xl mx-auto px-4 py-4">
             <ChatInput onSendMessage={handleSendMessage} onFileUpload={handleFileUpload} disabled={isProcessing} />

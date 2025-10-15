@@ -21,7 +21,6 @@ interface ChatSidebarProps {
 export function ChatSidebar({ currentChatId, onSelectChat, onNewChat }: ChatSidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
 
-  // Hardcoded previous chats (will be replaced with S3 data later)
   const chatSessions: ChatSession[] = [
     {
       id: "current",
@@ -72,15 +71,19 @@ export function ChatSidebar({ currentChatId, onSelectChat, onNewChat }: ChatSide
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-80 bg-gray-950/95 backdrop-blur-sm border-r border-gray-800/50 z-40
+          fixed top-0 left-0 w-80 bg-gray-950/95 backdrop-blur-sm border-r border-gray-800/50 z-40
           transform transition-transform duration-300 ease-in-out
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
           lg:translate-x-0 lg:static
         `}
+        style={{
+          height: "auto", // allow expansion as content grows
+          minHeight: "100vh", // still fill screen initially
+        }}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col">
           {/* Header */}
-          <div className="p-4 border-b border-gray-800/50">
+          <div className="p-4 border-b border-gray-800/50 sticky top-0 bg-gray-950/95 backdrop-blur-sm z-10">
             <Button
               onClick={onNewChat}
               className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500"
@@ -91,40 +94,38 @@ export function ChatSidebar({ currentChatId, onSelectChat, onNewChat }: ChatSide
           </div>
 
           {/* Chat History */}
-          <ScrollArea className="flex-1 p-4">
-            <div className="space-y-2">
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Recent Chats</h3>
-              {chatSessions.map((session) => (
-                <button
-                  key={session.id}
-                  onClick={() => {
-                    onSelectChat(session.id)
-                    setIsOpen(false)
-                  }}
-                  className={`
-                    w-full text-left p-3 rounded-lg transition-all
-                    ${
-                      currentChatId === session.id
-                        ? "bg-cyan-600/20 border border-cyan-600/50"
-                        : "bg-gray-900/50 border border-gray-800/50 hover:bg-gray-800/50"
-                    }
-                  `}
-                >
-                  <div className="flex items-start gap-3">
-                    <MessageSquare className="w-4 h-4 mt-1 text-cyan-400 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-white truncate">{session.title}</h4>
-                      <p className="text-xs text-gray-400 mt-1 line-clamp-2">{session.preview}</p>
-                      <span className="text-xs text-gray-500 mt-1 block">{session.timestamp}</span>
-                    </div>
+          <div className="p-4 space-y-2">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Recent Chats</h3>
+            {chatSessions.map((session) => (
+              <button
+                key={session.id}
+                onClick={() => {
+                  onSelectChat(session.id)
+                  setIsOpen(false)
+                }}
+                className={`
+                  w-full text-left p-3 rounded-lg transition-all
+                  ${
+                    currentChatId === session.id
+                      ? "bg-cyan-600/20 border border-cyan-600/50"
+                      : "bg-gray-900/50 border border-gray-800/50 hover:bg-gray-800/50"
+                  }
+                `}
+              >
+                <div className="flex items-start gap-3">
+                  <MessageSquare className="w-4 h-4 mt-1 text-cyan-400 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium text-white truncate">{session.title}</h4>
+                    <p className="text-xs text-gray-400 mt-1 line-clamp-2">{session.preview}</p>
+                    <span className="text-xs text-gray-500 mt-1 block">{session.timestamp}</span>
                   </div>
-                </button>
-              ))}
-            </div>
-          </ScrollArea>
+                </div>
+              </button>
+            ))}
+          </div>
 
           {/* Footer */}
-          <div className="p-4 border-t border-gray-800/50">
+          <div className="p-4 border-t border-gray-800/50 mt-auto">
             <div className="text-xs text-gray-500 text-center">
               <p>Chat history saved to S3</p>
             </div>
