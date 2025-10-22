@@ -3,7 +3,7 @@ import { FileValidationService } from "./fileValidation"
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export class UploadService {
-  private static readonly API_ENDPOINT = `${baseUrl}/api/upload`
+  private static readonly API_ENDPOINT = `/api/upload`
 
   static async uploadFile(file: File, onProgress?: (progress: UploadProgress) => void): Promise<UploadResponse> {
     // Validate file first
