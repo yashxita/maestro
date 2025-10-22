@@ -24,12 +24,14 @@ import s3_utils
 
 app = FastAPI(title="NotebookLM Backend", version="1.0.0")
 
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ⚠️ Restrict in production
+    allow_origins=allowed_origins,  # Specific origins from environment variable
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Create database tables on startup
