@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Call backend /me endpoint
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/me`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/me`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,

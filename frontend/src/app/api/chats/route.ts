@@ -7,15 +7,18 @@ export async function GET(request: NextRequest) {
     if (!token) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
-
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/chats`, {
+    console.log("token:", token);
+    console.log("check: ",process.env.NEXT_PUBLIC_API_BASE_URL);
+    console.log(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/chats`)
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/chats`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
+      
     })
-
+    console.log("response:", response);
     if (!response.ok) {
       const error = await response.json()
       return NextResponse.json({ error: error.detail || "Failed to get chats" }, { status: response.status })
@@ -39,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/chats`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/chats`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,

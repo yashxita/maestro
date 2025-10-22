@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       headers["Authorization"] = `Bearer ${token}`
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/upload`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/upload`, {
       method: "POST",
       headers,
       body: formData,

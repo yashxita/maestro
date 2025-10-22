@@ -10,7 +10,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const { id: chatId } = await params
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/chats/${chatId}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/chats/${chatId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -48,7 +48,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const { id: chatId } = await params
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/chats/${chatId}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/chats/${chatId}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",

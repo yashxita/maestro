@@ -12,7 +12,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const body = await request.json()
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/chats/${chatId}/messages`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/chats/${chatId}/messages`,
       {
         method: "POST",
         headers: {
