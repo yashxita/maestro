@@ -1,68 +1,36 @@
 import { type NextRequest, NextResponse } from "next/server"
-const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { cookies } from "next/headers"
 
 export async function POST(request: NextRequest) {
   try {
+    // Get the auth token from cookies
+    const cookieStore = await cookies()
+    const token = cookieStore.get("auth_token")?.value
+
+    // Get the form data from the request
     const formData = await request.formData()
-    const file = formData.get("file") as File
 
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 })
+    // Forward to backend
+    const headers: HeadersInit = {}
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`
     }
 
-    if (file.type !== "application/pdf") {
-      return NextResponse.json({ error: "Only PDF files are allowed" }, { status: 400 })
-    }
-
-    const maxSize = 10 * 1024 * 1024 // 10MB
-    if (file.size > maxSize) {
-      return NextResponse.json({ error: "File size must be less than 10MB" }, { status: 400 })
-    }
-
-    // Forward PDF to FastAPI backend
-    const externalFormData = new FormData()
-    externalFormData.append("file", file)
-
-    const externalResponse = await fetch(`${baseUrl}/upload`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/upload`, {
       method: "POST",
-      body: externalFormData,
+      headers,
+      body: formData,
     })
 
-    if (!externalResponse.ok) {
-      const errorText = await externalResponse.text().catch(() => "Unknown error")
-      console.error("External API error:", errorText)
-      return NextResponse.json({ error: "Failed to process PDF. Please try again." }, { status: 500 })
+    if (!response.ok) {
+      const errorText = await response.text()
+      return NextResponse.json({ error: errorText || "Upload failed" }, { status: response.status })
     }
 
-    const result = await externalResponse.json()
-
-    let podcastScript = ""
-
-    if (result.full_text) {
-      try {
-        // Generate podcast script
-        const podcastResponse = await fetch(`${baseUrl}/podcast`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: result.full_text }),
-        })
-
-        if (podcastResponse.ok) {
-          const podcastResult = await podcastResponse.json()
-          podcastScript = podcastResult.podcast_script || ""
-        }
-      } catch (error) {
-        console.error("Podcast generation error:", error)
-      }
-    }
-
-    return NextResponse.json({
-      success: true,
-      full_text: result.full_text || "",
-      podcast_script: podcastScript,
-    })
+    const data = await response.json()
+    return NextResponse.json(data)
   } catch (error) {
-    console.error("Upload API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("[v0] Upload error:", error)
+    return NextResponse.json({ error: "Failed to upload file" }, { status: 500 })
   }
 }

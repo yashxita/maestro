@@ -63,8 +63,10 @@ export function CompletedCard({ hasQuiz, quizData, hasPodcast, podcastData }: Co
               {/* Optional: Store or preview podcastData if you want */}
               {podcastData && (
                 <div className="mt-3 text-sm text-gray-400">
-                  {/* Example: short preview */}
-                  {podcastData.slice(0, 100)}...
+                  {typeof podcastData === "string"
+                    ? podcastData.slice(0, 100)
+                    : podcastData.script?.slice(0, 100) || ""}
+                  ...
                 </div>
               )}
             </div>

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,15 +9,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No text provided" }, { status: 400 })
     }
 
-    // Determine the appropriate endpoint based on speed
-    let endpoint = "normal"
-    if (speed >= 1.25) {
-      endpoint = "fast"
-    } else if (speed <= 0.8) {
-      endpoint = "slow"
-    }
-
-    const audioResponse = await fetch(`${baseUrl}/audio/${endpoint}`, {
+    const audioResponse = await fetch(`${baseUrl}/audio/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, voice, speed }),

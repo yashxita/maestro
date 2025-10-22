@@ -90,7 +90,7 @@ export function QuizCard({
       <div className="space-y-3 mb-6">
         {question.options.map((option, index) => {
           let buttonClass =
-            "text-base sm:text-lg md:text-md w-full p-4 text-left border-2 transition-all duration-200 hover:scale-[1.02] bg-slate-800/50 border-slate-700 text-white hover:border-blue-500/50 hover:bg-slate-800/80";
+            "text-base sm:text-lg md:text-md w-full p-4 text-left border-2 transition-all duration-200 hover:scale-[1.02] bg-slate-800/50 border-slate-700 text-white hover:border-blue-500/50 hover:bg-slate-800/80 flex";
 
           if (showResult && result) {
             if (index === result.correctAnswer) {
@@ -114,27 +114,34 @@ export function QuizCard({
 
           return (
             <Button
-              key={index}
-              className={cn(buttonClass)}
-              onClick={() => handleAnswerSelect(index)}
-              disabled={showResult}
-            >
-              <div className="flex items-center justify-between w-full">
-                <span>{option}</span>
-                {showResult && result && (
-                  <div className="ml-2">
-                    {index === result.correctAnswer && (
-                      <Check className="w-5 h-5 text-green-500" />
-                    )}
-                    {index === selectedAnswer &&
-                      !result.isCorrect &&
-                      index !== result.correctAnswer && (
-                        <X className="w-5 h-5 text-red-500" />
-                      )}
-                  </div>
-                )}
-              </div>
-            </Button>
+  key={index}
+  className={cn(
+    buttonClass,
+    "flex items-center justify-between w-full text-left whitespace-normal break-words leading-snug min-h-[60px] px-5 py-4"
+  )}
+  onClick={() => handleAnswerSelect(index)}
+  disabled={showResult}
+>
+  {/* Option text */}
+  <span className="flex-1 text-sm sm:text-base break-words text-left leading-relaxed pr-4">
+    {option}
+  </span>
+
+  {/* Icon */}
+  {showResult && result && (
+    <div className="flex-shrink-0 flex items-center">
+      {index === result.correctAnswer && (
+        <Check className="w-5 h-5 text-green-500" />
+      )}
+      {index === selectedAnswer &&
+        !result.isCorrect &&
+        index !== result.correctAnswer && (
+          <X className="w-5 h-5 text-red-500" />
+        )}
+    </div>
+  )}
+</Button>
+
           );
         })}
       </div>

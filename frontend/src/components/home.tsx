@@ -3,7 +3,11 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Dither from "@/components/Dither";
 
-export default function Home() {
+interface HomeProps {
+  onGetStarted: () => void;
+}
+
+export default function Home({ onGetStarted }: HomeProps) {
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
       <div className="absolute inset-0 z-0">
@@ -46,7 +50,7 @@ export default function Home() {
         <p className="text-xl text-gray-300 mb-8 max-w-6xl">
           Upload any document and let Maestro turn it into a podcast, interactive quiz, or AI-powered study guide.
         </p>
-        <Link href="/chat">
+        <Link href="/auth/login">
           <Button className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 text-lg px-8 py-4">
             Get Started
           </Button>

@@ -9,6 +9,7 @@ import { ProcessingCard } from "@/components/processing-card"
 import { CompletedCard } from "@/components/completed-card"
 import { ChatSidebar } from "@/components/chat-sidebar"
 import Plasma from "@/components/Plasma"
+import { fetchWithAuth } from "@/lib/auth"
 
 interface Message {
   id: string
@@ -22,7 +23,7 @@ interface Message {
 }
 
 export function ChatPage() {
-  const [currentChatId, setCurrentChatId] = useState("current")
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -33,12 +34,13 @@ export function ChatPage() {
       id: "2",
       type: "bot",
       content:
-        "You can upload a PDF document, and I'll help you create:\n\n📝 **Interactive Quiz** - Test your knowledge with AI-generated questions\n🎙️ **AI Podcast** - Listen to an engaging conversation about your content\n\nJust upload a PDF to get started!",
+        "You can upload a PDF document, and I'll help you create:\n\n📝 Interactive Quiz - Test your knowledge with AI-generated questions\n🎙️ AI Podcast - Listen to an engaging conversation about your content\n\nJust upload a PDF to get started!",
     },
   ])
   const [isProcessing, setIsProcessing] = useState(false)
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [uploadedFileId, setUploadedFileId] = useState<number | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [sidebarRefreshTrigger, setSidebarRefreshTrigger] = useState(0)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -48,27 +50,107 @@ export function ChatPage() {
     scrollToBottom()
   }, [messages])
 
-  const handleSelectChat = (chatId: string) => {
+  const handleSelectChat = async (chatId: string) => {
     setCurrentChatId(chatId)
     console.log("[v0] Selected chat:", chatId)
+
+    try {
+      const response = await fetchWithAuth(`/api/chats/${chatId}`)
+      if (response.ok) {
+        const data = await response.json()
+
+        const loadedMessages: Message[] = data.messages.map((msg: any) => {
+          const baseMessage: Message = {
+            id: msg.id.toString(),
+            type: msg.role === "user" ? "user" : "bot",
+            content: msg.content,
+          }
+
+          // Add file info if present
+          if (msg.file_name) {
+            baseMessage.fileName = msg.file_name
+            baseMessage.fileSize = msg.file_size
+            baseMessage.type = "file"
+          }
+
+          return baseMessage
+        })
+
+        if (loadedMessages.length === 0) {
+          setMessages([
+            {
+              id: "1",
+              type: "bot",
+              content: "Welcome to Maestro! I'm your AI assistant for transforming PDFs into interactive experiences.",
+            },
+            {
+              id: "2",
+              type: "bot",
+              content:
+                "You can upload a PDF document, and I'll help you create:\n\n📝 Interactive Quiz - Test your knowledge with AI-generated questions\n🎙️ AI Podcast - Listen to an engaging conversation about your content\n\nJust upload a PDF to get started!",
+            },
+          ])
+        } else {
+          setMessages(loadedMessages)
+        }
+      }
+    } catch (error) {
+      console.error("[v0] Error loading chat:", error)
+    }
   }
 
-  const handleNewChat = () => {
-    setCurrentChatId(`chat-${Date.now()}`)
-    setMessages([
-      {
-        id: "1",
-        type: "bot",
-        content: "Welcome to Maestro! I'm your AI assistant for transforming PDFs into interactive experiences.",
-      },
-      {
-        id: "2",
-        type: "bot",
-        content:
-          "You can upload a PDF document, and I'll help you create:\n\n📝 **Interactive Quiz** - Test your knowledge with AI-generated questions\n🎙️ **AI Podcast** - Listen to an engaging conversation about your content\n\nJust upload a PDF to get started!",
-      },
-    ])
-    setUploadedFile(null)
+  const handleNewChat = async () => {
+    try {
+      const response = await fetchWithAuth("/api/chats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "New Chat" }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setCurrentChatId(data.chat.id.toString())
+        setMessages([
+          {
+            id: "1",
+            type: "bot",
+            content: "Welcome to Maestro! I'm your AI assistant for transforming PDFs into interactive experiences.",
+          },
+          {
+            id: "2",
+            type: "bot",
+            content:
+              "You can upload a PDF document, and I'll help you create:\n\n📝 Interactive Quiz - Test your knowledge with AI-generated questions\n🎙️ AI Podcast - Listen to an engaging conversation about your content\n\nJust upload a PDF to get started!",
+          },
+        ])
+        setUploadedFileId(null)
+        sessionStorage.removeItem("extractedText")
+        sessionStorage.removeItem("podcastScript")
+        sessionStorage.removeItem("quizData")
+      }
+    } catch (error) {
+      console.error("[v0] Error creating new chat:", error)
+    }
+  }
+
+  const saveMessage = async (role: "user" | "assistant", content: string, fileName?: string) => {
+    if (!currentChatId) return
+
+    try {
+      await fetchWithAuth(`/api/chats/${currentChatId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role,
+          content,
+          file_name: fileName,
+        }),
+      })
+
+      setSidebarRefreshTrigger((prev) => prev + 1)
+    } catch (error) {
+      console.error("[v0] Error saving message:", error)
+    }
   }
 
   const handleFileUpload = async (file: File) => {
@@ -84,7 +166,9 @@ export function ChatPage() {
       return
     }
 
-    setUploadedFile(file)
+    if (!currentChatId) {
+      await handleNewChat()
+    }
 
     // Add user file message
     const fileMsgId = `file-${Date.now()}`
@@ -98,16 +182,21 @@ export function ChatPage() {
       },
     ])
 
+    await saveMessage("user", `Uploaded file: ${file.name}`, file.name)
+
     // Add bot processing message
     const botMsgId = `bot-${Date.now()}`
+    const processingMsg = "Great! I've received your PDF. Processing the content..."
     setMessages((prev) => [
       ...prev,
       {
         id: botMsgId,
         type: "bot",
-        content: "Great! I've received your PDF. Processing the content...",
+        content: processingMsg,
       },
     ])
+
+    await saveMessage("assistant", processingMsg)
 
     // Add processing card
     const processingId = `processing-${Date.now()}`
@@ -125,10 +214,12 @@ export function ChatPage() {
       const formData = new FormData()
       formData.append("file", file)
 
-      const response = await fetch("/api/upload", { method: "POST", body: formData })
+      const response = await fetchWithAuth("/api/upload", { method: "POST", body: formData })
       if (!response.ok) throw new Error("Upload failed")
 
       const result = await response.json()
+      setUploadedFileId(result.file_id)
+      sessionStorage.setItem("fileId", result.file_id.toString())
       sessionStorage.setItem("extractedText", result.full_text)
       sessionStorage.setItem("podcastScript", result.podcast_script || "")
 
@@ -136,15 +227,18 @@ export function ChatPage() {
       setMessages((prev) => prev.filter((msg) => msg.id !== processingId))
 
       // Add success bot message
+      const successMsg = "Perfect! Your document has been processed. What would you like to create?"
       const successMsgId = `bot-${Date.now()}`
       setMessages((prev) => [
         ...prev,
         {
           id: successMsgId,
           type: "bot",
-          content: "Perfect! Your document has been processed. What would you like to create?",
+          content: successMsg,
         },
       ])
+
+      await saveMessage("assistant", successMsg)
 
       // Add options
       const optionsId = `options-${Date.now()}`
@@ -157,14 +251,16 @@ export function ChatPage() {
         },
       ])
     } catch (error) {
+      const errorMsg = "Sorry, there was an error processing your file. Please try again."
       setMessages((prev) => [
         ...prev,
         {
           id: `bot-${Date.now()}`,
           type: "bot",
-          content: "Sorry, there was an error processing your file. Please try again.",
+          content: errorMsg,
         },
       ])
+      await saveMessage("assistant", errorMsg)
     } finally {
       setIsProcessing(false)
     }
@@ -179,24 +275,30 @@ export function ChatPage() {
     }
 
     const optionText = option === "both" ? "both Quiz and Podcast" : option === "quiz" ? "Quiz" : "Podcast"
+    const userMsg = `I'd like to create ${optionText}`
 
     setMessages((prev) => [
       ...prev,
       {
         id: `user-${Date.now()}`,
         type: "user",
-        content: `I'd like to create ${optionText}`,
+        content: userMsg,
       },
     ])
 
+    await saveMessage("user", userMsg)
+
+    const botMsg = `Excellent choice! I'm generating your ${optionText} now...`
     setMessages((prev) => [
       ...prev,
       {
         id: `bot-${Date.now()}`,
         type: "bot",
-        content: `Excellent choice! I'm generating your ${optionText} now...`,
+        content: botMsg,
       },
     ])
+
+    await saveMessage("assistant", botMsg)
 
     const processingIds: string[] = []
     if (selectedOptions.quiz) {
@@ -211,47 +313,33 @@ export function ChatPage() {
     }
 
     try {
-      const extractedText = sessionStorage.getItem("extractedText") || ""
       const results: { quiz?: any; podcast?: any } = {}
 
       if (selectedOptions.quiz) {
-        const quizResponse = await fetch("/api/generate-quiz", {
+        const extractedText = sessionStorage.getItem("extractedText") || ""
+        const quizResponse = await fetchWithAuth("/api/generate-quiz", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text: extractedText, count: 5 }),
         })
-        console.log("[v0] Quiz API response status:", quizResponse.status)
         if (quizResponse.ok) {
           const quizData = await quizResponse.json()
-          console.log("[v0] Quiz data received:", quizData)
           results.quiz = quizData.quiz
           sessionStorage.setItem("quizData", JSON.stringify(quizData.quiz))
         }
       }
 
       if (selectedOptions.podcast) {
-        const podcastResponse = await fetch("/api/generate-podcast", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: extractedText }),
-        })
-        console.log("[v0] Podcast API response status:", podcastResponse.status)
-        if (podcastResponse.ok) {
-          const podcastData = await podcastResponse.json()
-          console.log("[v0] Podcast data received:", podcastData)
-          console.log("[v0] Podcast script value:", podcastData.podcast_script)
-          results.podcast = podcastData.podcast_script
-          sessionStorage.setItem("podcastScript", podcastData.podcast_script)
-        } else {
-          console.log("[v0] Podcast API failed with status:", podcastResponse.status)
+        const podcastScript = sessionStorage.getItem("podcastScript") || ""
+        results.podcast = {
+          script: podcastScript,
+          audio_url: null,
         }
       }
 
       // Remove processing messages
       setMessages((prev) => prev.filter((msg) => !processingIds.includes(msg.id)))
 
-      console.log("[v0] Creating completed card with selectedOptions:", selectedOptions)
-      console.log("[v0] Results:", results)
       setMessages((prev) => [
         ...prev,
         {
@@ -265,29 +353,38 @@ export function ChatPage() {
         },
       ])
 
+      const doneMsg = "All done! Click on any card below to view your content."
       setMessages((prev) => [
         ...prev,
         {
           id: `bot-${Date.now()}`,
           type: "bot",
-          content: "All done! Click on any card below to view your content.",
+          content: doneMsg,
         },
       ])
+
+      await saveMessage("assistant", doneMsg)
     } catch (error) {
       console.error("Generation error:", error)
       setMessages((prev) => prev.filter((msg) => !processingIds.includes(msg.id)))
+      const errorMsg = "Sorry, there was an error generating your content. Please try again."
       setMessages((prev) => [
         ...prev,
         {
           id: `bot-${Date.now()}`,
           type: "bot",
-          content: "Sorry, there was an error generating your content. Please try again.",
+          content: errorMsg,
         },
       ])
+      await saveMessage("assistant", errorMsg)
     }
   }
 
   const handleSendMessage = async (message: string) => {
+    if (!currentChatId) {
+      await handleNewChat()
+    }
+
     setMessages((prev) => [
       ...prev,
       {
@@ -297,26 +394,41 @@ export function ChatPage() {
       },
     ])
 
+    await saveMessage("user", message)
+
     try {
-      const response = await fetch("/api/chat", {
+      const extractedText = sessionStorage.getItem("extractedText") || null
+
+      const response = await fetchWithAuth("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({
+          message,
+          context: extractedText,
+        }),
       })
+
       if (!response.ok) throw new Error("Chat failed")
 
       const result = await response.json()
-      setMessages((prev) => [...prev, { id: `bot-${Date.now()}`, type: "bot", content: result.response }])
+      const botResponse = result.response
+
+      setMessages((prev) => [...prev, { id: `bot-${Date.now()}`, type: "bot", content: botResponse }])
+
+      await saveMessage("assistant", botResponse)
     } catch (error) {
+      console.error("[v0] Chat error:", error)
+      const fallbackMsg =
+        "I'm here to help you transform PDFs into quizzes and podcasts. Please upload a PDF file to get started!"
       setMessages((prev) => [
         ...prev,
         {
           id: `bot-${Date.now()}`,
           type: "bot",
-          content:
-            "I'm here to help you transform PDFs into quizzes and podcasts. Please upload a PDF file to get started!",
+          content: fallbackMsg,
         },
       ])
+      await saveMessage("assistant", fallbackMsg)
     }
   }
 
@@ -328,7 +440,12 @@ export function ChatPage() {
         </div>
       </div>
 
-      <ChatSidebar currentChatId={currentChatId} onSelectChat={handleSelectChat} onNewChat={handleNewChat} />
+      <ChatSidebar
+        currentChatId={currentChatId || ""}
+        onSelectChat={handleSelectChat}
+        onNewChat={handleNewChat}
+        refreshTrigger={sidebarRefreshTrigger}
+      />
 
       <div className="flex-1 flex flex-col">
         <nav className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-gray-800/50 backdrop-blur-sm">
