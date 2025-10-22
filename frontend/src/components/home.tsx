@@ -124,7 +124,7 @@ export default function Home({ onGetStarted }: HomeProps) {
       {/* Footer */}
       <footer className="relative z-10 text-center py-12">
         <p className="text-gray-500 text-sm">
-          © {new Date().getFullYear()} Maestro. Built with ❤️ and AI.
+          © {new Date().getFullYear()} Maestro. Built with ❤️ by Yashita.
         </p>
       </footer>
     </div>
